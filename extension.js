@@ -11,6 +11,7 @@ const Me = ExtensionUtils.getCurrentExtension();
 const DBusIface = Me.imports.dbus;
 const Gio = imports.gi.Gio;
 const DEFAULT_INDICATOR_TEXT = 'no task';
+const PopupMenu = imports.ui.popupMenu;
 
 const SuperProductivity = Gio.DBusProxy.makeProxyWrapper(DBusIface.SuperProductivityIface);
 
@@ -22,10 +23,6 @@ const SuperProductivityIndicator = new Lang.Class({
     this.parent(0.0, 'Super Productivity Indicator', false);
     this._buildUi();
     this._proxy = new SuperProductivity(Gio.DBus.session, SUPER_PROD_ID, SUPER_PROD_OBJ_PATH);
-
-    for (var key in this._proxy) {
-      global.log('super', key);
-    }
 
     // watch for bus being available
     this._nameWatcherId = Gio.DBus.session.watch_name(
@@ -74,9 +71,9 @@ const SuperProductivityIndicator = new Lang.Class({
     // label
     this.currentTaskLabel = new St.Label({
       y_align: Clutter.ActorAlign.CENTER,
-      text: DEFAULT_INDICATOR_TEXT
+      text: DEFAULT_INDICATOR_TEXT,
+      style_class: 'spi-label'
     });
-    this.currentTaskLabel.add_style_class_name('spi-label');
     wrapperBox.add_actor(this.currentTaskLabel);
 
     // main app icon
@@ -96,6 +93,20 @@ const SuperProductivityIndicator = new Lang.Class({
 
     // finally add all to tray
     this.actor.add_actor(wrapperBox);
+
+    // add menu
+    // --------
+    // create new session section and menu
+    this._menu = new PopupMenu.PopupMenuSection();
+    this.menu.addMenuItem(this._menu);
+
+    const itemShow = new PopupMenu.PopupMenuItem('Show App');
+    this._menu.addMenuItem(itemShow);
+    itemShow.connect('activate', Lang.bind(this, this._showApp));
+
+    const itemCloseApp = new PopupMenu.PopupMenuItem('Quit');
+    this._menu.addMenuItem(itemCloseApp);
+    itemCloseApp.connect('activate', Lang.bind(this, this._quitApp));
   },
 
   _togglePlay: function () {
@@ -105,6 +116,16 @@ const SuperProductivityIndicator = new Lang.Class({
     } else {
       this._proxy.pauseTaskSync('PAUSE_TASK');
     }
+  },
+
+  _showApp: function () {
+    global.log('super', 'SHOW');
+    this._proxy.showAppSync();
+  },
+
+  _quitApp: function () {
+    global.log('super', 'QUIT');
+    this._proxy.quitAppSync();
   },
 
   _connected: function (obj, name) {
