@@ -54,16 +54,9 @@ const SuperProductivityIndicator = new Lang.Class({
     let wrapperBox = new St.BoxLayout();
     wrapperBox.add_style_class_name('spi-wrapper');
 
-    // main app icon
-    let mainIcon = new St.Icon({
-      icon_name: 'media-playback-start-symbolic',
-      style_class: 'spi-icon'
-    });
-    wrapperBox.add_actor(mainIcon);
-
     // button
     let toggleButton = new St.Bin({
-      style_class: 'spi-button',
+      style_class: 'spi-button-toggle',
       reactive: true,
       can_focus: true,
       y_fill: false,
@@ -71,10 +64,9 @@ const SuperProductivityIndicator = new Lang.Class({
     });
     let toggleButtonIcon = new St.Icon({
       icon_name: 'media-playback-start-symbolic',
-      style_class: 'spi-icon'
+      style_class: 'spi-icon-play'
     });
     toggleButton.set_child(toggleButtonIcon);
-    toggleButton.add_style_class_name('spi-button');
     wrapperBox.add_actor(toggleButton);
 
     toggleButton.connect('button-press-event', Lang.bind(this, this._togglePlay));
@@ -86,6 +78,21 @@ const SuperProductivityIndicator = new Lang.Class({
     });
     this.currentTaskLabel.add_style_class_name('spi-label');
     wrapperBox.add_actor(this.currentTaskLabel);
+
+    // main app icon
+    let markAsDoneBtn = new St.Bin({
+      style_class: 'spi-button-mark-as-done',
+      reactive: true,
+      can_focus: true,
+      y_fill: false,
+      track_hover: true
+    });
+    let mainIcon = new St.Icon({
+      gicon: Gio.icon_new_for_string(Me.path + '/tray-ico@2.png'),
+      style_class: 'spi-icon-mark-as-done'
+    });
+    markAsDoneBtn.set_child(mainIcon);
+    wrapperBox.add_actor(markAsDoneBtn);
 
     // finally add all to tray
     this.actor.add_actor(wrapperBox);

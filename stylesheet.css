@@ -1,9 +1,38 @@
+.spi-icon,
+.spi-icon-mark-as-done,
+.spi-icon-play,
+.spi-icon-pause {
+    font-size: 8px;
+    width: 18px;
+    height: 18px;
+}
 
-.helloworld-label {
-    font-size: 36px;
-    font-weight: bold;
-    color: #ffffff;
-    background-color: rgba(10,10,10,0.7);
-    border-radius: 5px;
-    padding: .5em;
+.spi-button-mark-as-done {
+    margin-left: 5px;
+}
+
+.spi-button-toggle {
+    margin-right: 5px;
+}
+
+.spi-button-mark-as-done,
+.spi-button-toggle {
+    width: 23px;
+    height: 23px;
+    display: block;
+    text-align: center;
+    border: 2px solid transparent;
+    border-radius: 100px;
+    margin: 2px;
+}
+
+.spi-button-mark-as-done:hover,
+.spi-button-toggle:hover {
+    border: 2px solid #ffffff;
+    cursor: pointer;
+}
+
+.spi-button-mark-as-done:hover .spi-icon-mark-as-done,
+.spi-button-toggle:hover .spi-icon-pause,
+.spi-button-toggle:hover .spi-icon-play {
 }
