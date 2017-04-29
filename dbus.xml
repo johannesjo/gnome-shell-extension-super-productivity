@@ -1,0 +1,17 @@
+<interface name="com.super.productivity.service">
+    <method name="startTask">
+        <arg type="s" direction="in"/>
+    </method>
+    <method name="pauseTask">
+        <arg type="s" direction="in"/>
+    </method>
+    <method name="quitApp">
+        <arg type="" direction="in"/>
+    </method>
+    <method name="showApp">
+        <arg type="" direction="in"/>
+    </method>
+    <signal name='taskChanged'>
+        <arg type='s'/>
+    </signal>
+</interface>

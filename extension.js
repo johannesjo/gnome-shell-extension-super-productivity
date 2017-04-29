@@ -6,10 +6,13 @@ const Main = imports.ui.main;
 const Lang = imports.lang;
 const PanelMenu = imports.ui.panelMenu;
 const Clutter = imports.gi.Clutter;
-//const Extension = ExtensionUtils.getCurrentExtension();
+const ExtensionUtils = imports.misc.extensionUtils;
+const Me = ExtensionUtils.getCurrentExtension();
+const DBusIface = Me.imports.dbus;
 const Gio = imports.gi.Gio;
+const DEFAULT_INDICATOR_TEXT = 'no task';
 
-const DEFAULT_INDICATOR_TEXT = 'SP';
+const SuperProductivity = Gio.DBusProxy.makeProxyWrapper(DBusIface.SuperProductivityIface);
 
 const SuperProductivityIndicator = new Lang.Class({
   Name: 'SuperProductivityIndicator',
@@ -18,22 +21,82 @@ const SuperProductivityIndicator = new Lang.Class({
   _init: function () {
     this.parent(0.0, 'Super Productivity Indicator', false);
     this._buildUi();
+    this._proxy = new SuperProductivity(Gio.DBus.session, SUPER_PROD_ID, SUPER_PROD_OBJ_PATH);
+
+    // watch for bus being available
+    this._nameWatcherId = Gio.DBus.session.watch_name(
+      SUPER_PROD_ID,
+      Gio.BusNameWatcherFlags.AUTO_START,
+      Lang.bind(this, this._connected),
+      Lang.bind(this, this._disconnected));
+
+    this._taskChangedId = this._proxy.connectSignal('taskChanged', Lang.bind(this, this._taskChanged));
+
+  },
+
+  _taskChanged: function (emitter, something, taskId) {
+    global.log('super', taskId);
   },
 
   _buildUi: function () {
-    this.statusLabel = new St.Label({
+    let wrapperBox = new St.BoxLayout();
+    wrapperBox.add_style_class_name('spi-wrapper');
+
+    // main app icon
+    let mainIcon = new St.Icon({
+      icon_name: 'media-playback-start-symbolic',
+      style_class: 'spi-icon'
+    });
+    wrapperBox.add_actor(mainIcon);
+
+    // button
+    let toggleButton = new St.Bin({
+      style_class: 'spi-button',
+      reactive: true,
+      can_focus: true,
+      y_fill: false,
+      track_hover: true
+    });
+    let toggleButtonIcon = new St.Icon({
+      icon_name: 'media-playback-start-symbolic',
+      style_class: 'spi-icon'
+    });
+    toggleButton.set_child(toggleButtonIcon);
+    toggleButton.add_style_class_name('spi-button');
+    wrapperBox.add_actor(toggleButton);
+
+    toggleButton.connect('button-press-event', Lang.bind(this, this._togglePlay));
+
+    // label
+    this.currentTaskLabel = new St.Label({
       y_align: Clutter.ActorAlign.CENTER,
       text: DEFAULT_INDICATOR_TEXT
     });
-    this.statusLabel.add_style_class_name('super-productivity-indicator-label');
+    this.currentTaskLabel.add_style_class_name('spi-label');
+    wrapperBox.add_actor(this.currentTaskLabel);
 
-    let topBox = new St.BoxLayout();
-    //topBox.add_actor(button);
-    topBox.add_actor(this.statusLabel);
-    this.actor.add_actor(topBox);
-    topBox.add_style_class_name('super-productivity-indicator');
-
+    // finally add all to tray
+    this.actor.add_actor(wrapperBox);
   },
+
+  _togglePlay: function () {
+    global.log('super', 'PLAY_TOGGLE');
+  },
+
+  _connected: function (obj, name) {
+    global.log('super', 'CONNECTED', arguments);
+  },
+
+  _disconnected: function () {
+    global.log('super', 'DIS _ CONNECTED');
+  },
+
+  stopWatcher: function () {
+    if (this._nameWatcherId) {
+      Gio.DBus.session.unwatch_name(this._nameWatcherId);
+      this._nameWatcherId = 0;
+    }
+  }
 });
 
 let spMenu;
@@ -47,5 +110,6 @@ function enable() {
 }
 
 function disable() {
+  spMenu.stopWatcher();
   spMenu.destroy();
 }
