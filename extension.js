@@ -24,13 +24,6 @@ const SuperProductivityIndicator = new Lang.Class({
     this._buildUi();
     this._proxy = new SuperProductivity(Gio.DBus.session, SUPER_PROD_ID, SUPER_PROD_OBJ_PATH);
 
-    // watch for bus being available
-    this._nameWatcherId = Gio.DBus.session.watch_name(
-      SUPER_PROD_ID,
-      Gio.BusNameWatcherFlags.AUTO_START,
-      Lang.bind(this, this._connected),
-      Lang.bind(this, this._disconnected));
-
     this._taskChangedId = this._proxy.connectSignal('taskChanged', Lang.bind(this, this._taskChanged));
 
   },
@@ -48,8 +41,8 @@ const SuperProductivityIndicator = new Lang.Class({
   },
 
   _buildUi: function () {
-    let wrapperBox = new St.BoxLayout();
-    wrapperBox.add_style_class_name('spi-wrapper');
+    this.wrapperEl = new St.BoxLayout();
+    this.wrapperEl.add_style_class_name('spi-wrapper');
 
     // button
     let toggleButton = new St.Bin({
@@ -64,7 +57,7 @@ const SuperProductivityIndicator = new Lang.Class({
       style_class: 'spi-icon-play'
     });
     toggleButton.set_child(toggleButtonIcon);
-    wrapperBox.add_actor(toggleButton);
+    this.wrapperEl.add_actor(toggleButton);
 
     toggleButton.connect('button-press-event', Lang.bind(this, this._togglePlay));
 
@@ -74,7 +67,7 @@ const SuperProductivityIndicator = new Lang.Class({
       text: DEFAULT_INDICATOR_TEXT,
       style_class: 'spi-label'
     });
-    wrapperBox.add_actor(this.currentTaskLabel);
+    this.wrapperEl.add_actor(this.currentTaskLabel);
 
     // main app icon
     let markAsDoneBtn = new St.Bin({
@@ -89,10 +82,10 @@ const SuperProductivityIndicator = new Lang.Class({
       style_class: 'spi-icon-mark-as-done'
     });
     markAsDoneBtn.set_child(mainIcon);
-    wrapperBox.add_actor(markAsDoneBtn);
+    this.wrapperEl.add_actor(markAsDoneBtn);
 
     // finally add all to tray
-    this.actor.add_actor(wrapperBox);
+    this.actor.add_actor(this.wrapperEl);
 
     // add menu
     // --------
@@ -128,20 +121,6 @@ const SuperProductivityIndicator = new Lang.Class({
     this._proxy.quitAppSync();
   },
 
-  _connected: function (obj, name) {
-    global.log('super', 'CONNECTED', arguments);
-  },
-
-  _disconnected: function () {
-    global.log('super', 'DIS _ CONNECTED');
-  },
-
-  stopWatcher: function () {
-    if (this._nameWatcherId) {
-      Gio.DBus.session.unwatch_name(this._nameWatcherId);
-      this._nameWatcherId = 0;
-    }
-  }
 });
 
 let spMenu;
@@ -149,12 +128,38 @@ let spMenu;
 function init() {
 }
 
+let watcherId;
 function enable() {
-  spMenu = new SuperProductivityIndicator;
-  Main.panel.addToStatusArea('super-productivity-indicator', spMenu);
+  function _connected(obj, name) {
+    global.log('super', 'CONNECTED', arguments);
+    spMenu = new SuperProductivityIndicator;
+    Main.panel.addToStatusArea('super-productivity-indicator', spMenu);
+  }
+
+  function _disconnected() {
+    global.log('super', 'DIS _ CONNECTED');
+    if (spMenu) {
+      spMenu.destroy();
+    }
+  }
+
+  // watch for bus being available
+  watcherId = Gio.DBus.session.watch_name(
+    SUPER_PROD_ID,
+    Gio.BusNameWatcherFlags.AUTO_START,
+    _connected,
+    _disconnected);
+}
+
+function stopWatcher() {
+  if (watcherId) {
+    Gio.DBus.session.unwatch_name(watcherId);
+    watcherId = 0;
+  }
 }
 
 function disable() {
-  spMenu.stopWatcher();
+  stopWatcher();
   spMenu.destroy();
 }
+
