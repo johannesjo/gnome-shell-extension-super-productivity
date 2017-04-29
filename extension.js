@@ -28,38 +28,30 @@ const SuperProductivityIndicator = new Lang.Class({
 
   },
 
-  _taskChanged: function (emitter, something, taskId) {
-    global.log('super', taskId);
-    if (taskId === 'NONE') {
-      this.isActiveTask = false;
-      // TODO set pause icon
-    } else {
-      this.currentTaskLabel.set_text(taskId.toString());
-      this.isActiveTask = true;
-      // TODO set play icon
-    }
-  },
-
   _buildUi: function () {
     this.wrapperEl = new St.BoxLayout();
     this.wrapperEl.add_style_class_name('spi-wrapper');
 
     // button
-    let toggleButton = new St.Bin({
+    this.toggleButton = new St.Bin({
       style_class: 'spi-button-toggle',
       reactive: true,
       can_focus: true,
       y_fill: false,
       track_hover: true
     });
-    let toggleButtonIcon = new St.Icon({
+    this.playIcon = new St.Icon({
       icon_name: 'media-playback-start-symbolic',
       style_class: 'spi-icon-play'
     });
-    toggleButton.set_child(toggleButtonIcon);
-    this.wrapperEl.add_actor(toggleButton);
+    this.pauseIcon = new St.Icon({
+      icon_name: 'media-playback-pause-symbolic',
+      style_class: 'spi-icon-play'
+    });
+    this.toggleButton.set_child(this.playIcon);
+    this.wrapperEl.add_actor(this.toggleButton);
 
-    toggleButton.connect('button-press-event', Lang.bind(this, this._togglePlay));
+    this.toggleButton.connect('button-press-event', Lang.bind(this, this._togglePlay));
 
     // label
     this.currentTaskLabel = new St.Label({
@@ -102,12 +94,31 @@ const SuperProductivityIndicator = new Lang.Class({
     itemCloseApp.connect('activate', Lang.bind(this, this._quitApp));
   },
 
+  _taskChanged: function (emitter, something, params) {
+    const taskId = params[0].toString();
+    const taskText = params[1].toString();
+    global.log('super', taskId, taskText);
+
+    if (taskId.toString() === 'NONE') {
+      this.isActiveTask = false;
+      this.currentTaskLabel.set_text(DEFAULT_INDICATOR_TEXT);
+      this.toggleButton.set_child(this.pauseIcon);
+    } else if (taskId.toString() === 'PAUSED') {
+      this.isActiveTask = false;
+      this.toggleButton.set_child(this.pauseIcon);
+    } else {
+      this.currentTaskLabel.set_text(taskText.toString());
+      this.isActiveTask = true;
+      this.toggleButton.set_child(this.playIcon);
+    }
+  },
+
   _togglePlay: function () {
     global.log('super', 'PLAY_TOGGLE');
     if (this.isActiveTask === true) {
-      this._proxy.startTaskSync('PLAY_TASK');
+      this._proxy.startTaskSync();
     } else {
-      this._proxy.pauseTaskSync('PAUSE_TASK');
+      this._proxy.pauseTaskSync();
     }
   },
 
