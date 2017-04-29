@@ -23,6 +23,10 @@ const SuperProductivityIndicator = new Lang.Class({
     this._buildUi();
     this._proxy = new SuperProductivity(Gio.DBus.session, SUPER_PROD_ID, SUPER_PROD_OBJ_PATH);
 
+    for (var key in this._proxy) {
+      global.log('super', key);
+    }
+
     // watch for bus being available
     this._nameWatcherId = Gio.DBus.session.watch_name(
       SUPER_PROD_ID,
@@ -36,6 +40,14 @@ const SuperProductivityIndicator = new Lang.Class({
 
   _taskChanged: function (emitter, something, taskId) {
     global.log('super', taskId);
+    if (taskId === 'NONE') {
+      this.isActiveTask = false;
+      // TODO set pause icon
+    } else {
+      this.currentTaskLabel.set_text(taskId.toString());
+      this.isActiveTask = true;
+      // TODO set play icon
+    }
   },
 
   _buildUi: function () {
@@ -81,6 +93,11 @@ const SuperProductivityIndicator = new Lang.Class({
 
   _togglePlay: function () {
     global.log('super', 'PLAY_TOGGLE');
+    if (this.isActiveTask === true) {
+      this._proxy.startTaskSync('PLAY_TASK');
+    } else {
+      this._proxy.pauseTaskSync('PAUSE_TASK');
+    }
   },
 
   _connected: function (obj, name) {
