@@ -122,9 +122,9 @@ const SuperProductivityIndicator = new Lang.Class({
   _togglePlay: function () {
     global.log('super', 'PLAY_TOGGLE');
     if (this.isActiveTask === true) {
-      this._proxy.startTaskRemote();
-    } else {
       this._proxy.pauseTaskRemote();
+    } else {
+      this._proxy.startTaskRemote();
     }
     return Clutter.EVENT_STOP;
   },
