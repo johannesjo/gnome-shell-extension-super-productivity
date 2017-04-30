@@ -25,7 +25,6 @@ const SuperProductivityIndicator = new Lang.Class({
     this._proxy = new SuperProductivity(Gio.DBus.session, SUPER_PROD_ID, SUPER_PROD_OBJ_PATH);
 
     this._taskChangedId = this._proxy.connectSignal('taskChanged', Lang.bind(this, this._taskChanged));
-
   },
 
   _buildUi: function () {
@@ -74,6 +73,7 @@ const SuperProductivityIndicator = new Lang.Class({
       style_class: 'spi-icon-mark-as-done'
     });
     markAsDoneBtn.set_child(mainIcon);
+    markAsDoneBtn.connect('button-press-event', Lang.bind(this, this._markAsDone));
     this.wrapperEl.add_actor(markAsDoneBtn);
 
     // finally add all to tray
@@ -113,23 +113,32 @@ const SuperProductivityIndicator = new Lang.Class({
     }
   },
 
+  _markAsDone: function () {
+    global.log('super', 'MARK_DONE');
+    this._proxy.markAsDoneRemote();
+    return Clutter.EVENT_STOP;
+  },
+
   _togglePlay: function () {
     global.log('super', 'PLAY_TOGGLE');
     if (this.isActiveTask === true) {
-      this._proxy.startTaskSync();
+      this._proxy.startTaskRemote();
     } else {
-      this._proxy.pauseTaskSync();
+      this._proxy.pauseTaskRemote();
     }
+    return Clutter.EVENT_STOP;
   },
 
   _showApp: function () {
     global.log('super', 'SHOW');
-    this._proxy.showAppSync();
+    this._proxy.showAppRemote();
+    return Clutter.EVENT_STOP;
   },
 
   _quitApp: function () {
     global.log('super', 'QUIT');
-    this._proxy.quitAppSync();
+    this._proxy.quitAppRemote();
+    return Clutter.EVENT_STOP;
   },
 
 });
