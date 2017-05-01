@@ -105,11 +105,11 @@ const SuperProductivityIndicator = new Lang.Class({
       this.toggleButton.set_child(this.pauseIcon);
     } else if (taskId.toString() === 'PAUSED') {
       this.isActiveTask = false;
-      this.toggleButton.set_child(this.pauseIcon);
+      this.toggleButton.set_child(this.playIcon);
     } else {
       this.currentTaskLabel.set_text(taskText.toString());
       this.isActiveTask = true;
-      this.toggleButton.set_child(this.playIcon);
+      this.toggleButton.set_child(this.pauseIcon);
     }
   },
 
