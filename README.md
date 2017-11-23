@@ -8,6 +8,6 @@ The companion gnome shell extension for super productivity. Very early version. 
 ```
 cd tmp
 git clone git@github.com:johannesjo/gnome-shell-extension-super-productivity.git
-mv gnome-shell-extension-super-productivity /home/$(whoami)/.local/share/gnome-shell/extensions/gnome-shell-extension-super-productivity`
+mv gnome-shell-extension-super-productivity /home/$(whoami)/.local/share/gnome-shell/extensions/gnome-shell-extension-super-productivity
 ```
 2. Enable it via the gnome tweak tool.
