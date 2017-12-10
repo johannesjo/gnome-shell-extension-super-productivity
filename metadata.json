@@ -1,1 +1,18 @@
-{"uuid": "indicator@johannes.super-productivity.com", "shell-version": ["3.18.5"], "name": "Super Productivity", "description": "The companion gnome shell extension for Super Productivity"}
+{
+  "uuid": "indicator@johannes.super-productivity.com",
+  "shell-version": [
+    "3.18",
+    "3.19",
+    "3.20",
+    "3.22",
+    "3.23",
+    "3.24",
+    "3.25",
+    "3.26",
+    "3.27"
+  ],
+  "name": "Super Productivity Indicator",
+  "description": "The companion gnome shell extension for Super Productivity",
+  "version": 1,
+  "url": "https://github.com/johannesjo/gnome-shell-extension-super-productivity"
+}
