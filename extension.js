@@ -10,7 +10,7 @@ const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 const DBusIface = Me.imports.dbus;
 const Gio = imports.gi.Gio;
-const DEFAULT_INDICATOR_TEXT = 'no task';
+const DEFAULT_INDICATOR_TEXT = '';
 const PopupMenu = imports.ui.popupMenu;
 
 const SuperProductivity = Gio.DBusProxy.makeProxyWrapper(DBusIface.SuperProductivityIface);
@@ -19,15 +19,16 @@ const SuperProductivityIndicator = new Lang.Class({
   Name: 'SuperProductivityIndicator',
   Extends: PanelMenu.Button,
 
-  _init: function () {
+  _init: function() {
     this.parent(0.0, 'Super Productivity Indicator', false);
     this._buildUi();
     this._proxy = new SuperProductivity(Gio.DBus.session, SUPER_PROD_ID, SUPER_PROD_OBJ_PATH);
 
-    this._taskChangedId = this._proxy.connectSignal('taskChanged', Lang.bind(this, this._taskChanged));
+    this._taskChangedId = this._proxy.connectSignal('taskChanged', Lang.bind(this, this._onTaskChanged));
+    this._pomdoroUpdateId = this._proxy.connectSignal('pomodoroUpdate', Lang.bind(this, this._onPomodoroUpdate));
   },
 
-  _buildUi: function () {
+  _buildUi: function() {
     this.wrapperEl = new St.BoxLayout();
     this.wrapperEl.add_style_class_name('spi-wrapper');
 
@@ -52,13 +53,21 @@ const SuperProductivityIndicator = new Lang.Class({
 
     this.toggleButton.connect('button-press-event', Lang.bind(this, this._togglePlay));
 
-    // label
+    // current task label
     this.currentTaskLabel = new St.Label({
       y_align: Clutter.ActorAlign.CENTER,
       text: DEFAULT_INDICATOR_TEXT,
       style_class: 'spi-label'
     });
     this.wrapperEl.add_actor(this.currentTaskLabel);
+
+    // pomodoro label
+    this.pomodoroLabel = new St.Label({
+      y_align: Clutter.ActorAlign.CENTER,
+      text: '',
+      style_class: 'spi-pomodoro-label'
+    });
+    this.wrapperEl.add_actor(this.pomodoroLabel);
 
     // main app icon
     let markAsDoneBtn = new St.Bin({
@@ -94,7 +103,28 @@ const SuperProductivityIndicator = new Lang.Class({
     itemCloseApp.connect('activate', Lang.bind(this, this._quitApp));
   },
 
-  _taskChanged: function (emitter, something, params) {
+  _onPomodoroUpdate: function(emitter, something, params) {
+    const isOnBreak = params[0];
+    const currentSessionTime = params[1];
+    const currentSessionInitialTime = params[2];
+
+    const percentageDone = Math.round(currentSessionTime / currentSessionInitialTime * 100);
+    const currentSessionTimeInSeconds = Math.round(currentSessionTime / 1000);
+    const currentSessionTimeInMinutes = Math.round(currentSessionTimeInSeconds / 60);
+
+    let currentSessionTimeString;
+    if (currentSessionTimeInMinutes > 0) {
+      currentSessionTimeString = currentSessionTimeInMinutes + 'm';
+    } else {
+      currentSessionTimeString = currentSessionTimeInSeconds + 's';
+    }
+
+    global.log('super', isOnBreak, currentSessionTime, currentSessionInitialTime, currentSessionTimeString);
+
+    this.pomodoroLabel.set_text(' 🍅' + currentSessionTimeString);
+  },
+
+  _onTaskChanged: function(emitter, something, params) {
     const taskId = params[0].toString();
     const taskText = params[1].toString();
     global.log('super', taskId, taskText);
@@ -105,21 +135,21 @@ const SuperProductivityIndicator = new Lang.Class({
       this.toggleButton.set_child(this.pauseIcon);
     } else if (taskId.toString() === 'PAUSED') {
       this.isActiveTask = false;
-      this.toggleButton.set_child(this.playIcon);
+      this.toggleButton.set_child(this.pauseIcon);
     } else {
       this.currentTaskLabel.set_text(taskText.toString());
       this.isActiveTask = true;
-      this.toggleButton.set_child(this.pauseIcon);
+      this.toggleButton.set_child(this.playIcon);
     }
   },
 
-  _markAsDone: function () {
+  _markAsDone: function() {
     global.log('super', 'MARK_DONE');
     this._proxy.markAsDoneRemote();
     return Clutter.EVENT_STOP;
   },
 
-  _togglePlay: function () {
+  _togglePlay: function() {
     global.log('super', 'PLAY_TOGGLE');
     if (this.isActiveTask === true) {
       this._proxy.pauseTaskRemote();
@@ -129,13 +159,13 @@ const SuperProductivityIndicator = new Lang.Class({
     return Clutter.EVENT_STOP;
   },
 
-  _showApp: function () {
+  _showApp: function() {
     global.log('super', 'SHOW');
     this._proxy.showAppRemote();
     return Clutter.EVENT_STOP;
   },
 
-  _quitApp: function () {
+  _quitApp: function() {
     global.log('super', 'QUIT');
     this._proxy.quitAppRemote();
     return Clutter.EVENT_STOP;
@@ -149,6 +179,7 @@ function init() {
 }
 
 let watcherId;
+
 function enable() {
   function _connected(obj, name) {
     global.log('super', 'CONNECTED', arguments);

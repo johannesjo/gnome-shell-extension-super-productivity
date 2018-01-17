@@ -13,4 +13,9 @@
         <arg type='s'/>
         <arg type='s'/>
     </signal>
+    <signal name='pomodoroUpdate'>
+        <arg type='b'/>
+        <arg type='x'/>
+        <arg type='x'/>
+    </signal>
 </interface>
